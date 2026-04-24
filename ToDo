@@ -1,0 +1,86 @@
+Şimdi ödevimi yapacağım: Kütüphane Yönetim Sistemi.
+
+ÖDEV DETAYLARI:
+
+Domain katmanı:
+Book aggregate:
+- Id, Title, Author, ISBN, TotalStock, AvailableStock alanları
+- static Book Create(title, author, isbn, stock) factory method
+- Borrow() metodu — AvailableStock düşür, stok yoksa BusinessRuleException
+- Return() metodu — AvailableStock artır
+- BookBorrowedEvent ve BookReturnedEvent domain event'leri
+
+Loan aggregate:
+- Id, BookId, MemberId, BorrowedAt, DueDate, ReturnedAt alanları
+- static Loan Create(bookId, memberId, durationDays) — DueDate = bugün + durationDays
+- Return(returnDate) metodu — ReturnedAt set eder
+- CalculateLateFee() metodu — her gecikme günü için 2 TL, erken iadede 0
+- IsReturned property — ReturnedAt null değilse true
+- OverdueDays property — gecikme gün sayısı
+
+Application katmanı:
+BorrowBookCommand(BookId, MemberId, DurationDays):
+- Validator: BookId boş olamaz, MemberId boş olamaz, DurationDays 1-30 arası olmalı
+- Handler: Book'u çek → book.Borrow() → Loan oluştur → kaydet
+
+ReturnBookCommand(LoanId):
+- Handler: Loan'ı çek → Book'u çek → loan.Return(DateTime.UtcNow) → book.Return() → ceza varsa logla → kaydet
+
+GetBookByIdQuery(BookId):
+- BookDto(Id, Title, Author, ISBN, AvailableStock, TotalStock) döner
+
+GetActiveLoansByMemberQuery(MemberId):
+- LoanDto(Id, BookId, BookTitle, BorrowedAt, DueDate, IsOverdue, LateFee) listesi döner
+- Sadece iade edilmemiş loan'ları getir
+
+Repository interface'leri (Domain'de tanımlanacak):
+- IBookRepository: GetByIdAsync, AddAsync, Update
+- ILoanRepository: GetByIdAsync, GetActiveLoansByMemberAsync, AddAsync, Update
+
+Test katmanı — en az 10 test:
+BookTests:
+1. Create_ShouldSetAvailableStockCorrectly
+2. Borrow_ShouldDecreaseAvailableStock
+3. Borrow_WhenNoStock_ShouldThrowBusinessRuleException
+4. Return_ShouldIncreaseAvailableStock
+5. Borrow_ShouldRaiseBookBorrowedEvent
+
+LoanTests:
+6. Create_ShouldSetDueDateCorrectly
+7. Return_BeforeDueDate_ShouldHaveZeroLateFee
+8. Return_AfterDueDate_ShouldCalculateCorrectLateFee — 3 gün geç = 6 TL
+9. IsReturned_WhenNotReturned_ShouldBeFalse
+10. CalculateLateFee_WhenNotReturned_ShouldReturnZero
+
+Değerlendirme kriterleri:
+- İş kuralları Handler'da değil Domain'de mi?
+- Domain hiçbir dış bağımlılık taşımıyor mu?
+- private set / internal doğru kullanılmış mı?
+- Domain Event'ler doğru yerde fırlatılıyor mu?
+- Testler mock olmadan saf C# ile yazılmış mı?
+
+Bana adım adım rehberlik et. Önce Domain katmanından başlayalım, 
+her adımda kodumu yazıp sana göndereceğim, sen de değerlendir ve yönlendir.
+
+
+
+LibraryApp.Application/
+├── Commands/
+│   ├── BorrowBook/
+│   │   ├── BorrowBookCommand.cs
+│   │   ├── BorrowBookCommandHandler.cs
+│   │   └── BorrowBookCommandValidator.cs
+│   └── ReturnBook/
+│       ├── ReturnBookCommand.cs
+│       └── ReturnBookCommandHandler.cs
+├── Queries/
+│   ├── GetBookById/
+│   │   ├── GetBookByIdQuery.cs
+│   │   ├── GetBookByIdQueryHandler.cs
+│   │   └── BookDto.cs
+│   └── GetActiveLoansByMember/
+│       ├── GetActiveLoansByMemberQuery.cs
+│       ├── GetActiveLoansByMemberQueryHandler.cs
+│       └── LoanDto.cs
+
+,
