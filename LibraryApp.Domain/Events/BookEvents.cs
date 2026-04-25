@@ -5,7 +5,7 @@ using LibraryApp.Domain.ValueObjects;
 
 namespace LibraryApp.Domain.Events;
 
-public record class BookCreatedEvent(Guid BookId, Guid AuthorId,string Title, ISBN ISBN,Money Price,int TotalStock,BookStatus Status) : IDomainEvent
+public record class BookCreatedEvent(Guid BookId, Guid AuthorId,string Title, ISBN ISBN,Money Money,int TotalStock,BookStatus Status) : IDomainEvent
 {
 	public Guid Id { get; } = Guid.NewGuid();
 	public DateTime OccurredOn { get; } = DateTime.UtcNow;

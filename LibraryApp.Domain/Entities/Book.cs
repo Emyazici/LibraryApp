@@ -9,15 +9,15 @@ public class Book : AggregateRoot
 {
 	public Guid AuthorId { get; private set; }
 	public string Title { get; private set; }
-	public ISBN ISBN { get; private set; }
-	public Money Price { get; private set; }
+	public ISBN Isbn { get; private set; }
+	public Money Money { get; private set; }
 	public int TotalStock { get; private set; }	
 	public BookStatus Status { get; private set; }
 	
 
 	private Book(){}
 
-	public static Book Create(Guid authorId,string title,  ISBN isbn, Money price ,int totalStock)
+	public static Book Create(Guid authorId, string title, string isbn, decimal price, string currency, int totalStock)
 	{
 		if (string.IsNullOrWhiteSpace(title))
 			throw new BusinessRuleException("Kitap başlığı boş olamaz.");
@@ -33,12 +33,12 @@ public class Book : AggregateRoot
 			Id = Guid.NewGuid(),
 			AuthorId = authorId,
 			Title = title,
-			ISBN = isbn,
-			Price = price,
+			Isbn = ISBN.Create(isbn),
+			Money = Money.Create(price, currency),
 			TotalStock = totalStock,
 			Status = BookStatus.Available
 		};
-		book.AddDomainEvent(new BookCreatedEvent(book.Id, book.AuthorId, book.Title, book.ISBN, book.Price, book.TotalStock, book.Status));
+		book.AddDomainEvent(new BookCreatedEvent(book.Id, book.AuthorId, book.Title, book.Isbn, book.Money, book.TotalStock, book.Status));
 
 		return book;
 	}

@@ -6,4 +6,5 @@ public interface IBookRepository
 	Task<Book> AddAsync(Book book,CancellationToken ct = default);
 	Task UpdateAsync(Book book,CancellationToken ct = default);
 	Task DeleteAsync(Guid id,CancellationToken ct = default);
+	Task<bool> ExistsByIsbnAsync(string isbn, CancellationToken ct = default);
 }
