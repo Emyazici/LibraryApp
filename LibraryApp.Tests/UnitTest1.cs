@@ -1,11 +1,2 @@
-namespace LibraryApp.Tests
-{
-    public class UnitTest1
-    {
-        [Fact]
-        public void Test1()
-        {
-
-        }
-    }
-}
+// Bu dosya artık kullanılmıyor.
+// Testler Domain/ ve Application/ klasörlerinde organize edilmiştir.
