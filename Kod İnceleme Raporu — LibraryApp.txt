@@ -1,0 +1,230 @@
+================================================================================
+  KOD İNCELEME RAPORU — LibraryApp
+  Tarih  : 25 Nisan 2026
+  Yazar  : Senior Software Architect (Claude Sonnet 4.6)
+  Kapsam : DDD · CQRS · Clean Architecture · SOLID
+================================================================================
+
+
+GENEL DEĞERLENDİRME
+───────────────────
+DDD/CQRS'in kavramsal iskeleti doğru kurulmuş. Value Object'ler, Aggregate
+factory metodları, Result pattern ve pipeline behavior sırası — bunlar sağlam
+mimari düşünceyi gösteriyor. Ancak 3 veri kaybı hatası ürünü fiilen çalışmaz
+kılıyor, 1 state machine hatası iş kuralını kırıyor. Test coverage sıfır.
+
+  GENEL PUAN : 65 / 100
+
+
+────────────────────────────────────────────────────────────────────────────────
+  BÖLÜM 1 — GÜÇLÜ YANLAR
+────────────────────────────────────────────────────────────────────────────────
+
+1.1  VALUE OBJECT'LER — Mükemmel
+     ┌─────────────────────────────────────────────────────────────────────┐
+     │  ISBN.cs       → Sealed, private ctor, format validasyonu, equality │
+     │  LoanPeriod.cs → IsOverdue(), DaysRemaining(), Extend() VO içinde   │
+     │  Money.cs      → Negatif kontrol, aynı-currency Add(), immutable    │
+     └─────────────────────────────────────────────────────────────────────┘
+
+1.2  AGGREGATE TASARIMI — Doğru
+     • Book.Borrow() ve Book.Return() entity içinde; business logic
+       handler'a sızmamış. ✓
+     • Loan.Return() ve Loan.CalculateFee() Loan aggregate'inde. ✓
+     • Factory method (Create) + private constructor kombinasyonu doğru. ✓
+     • Domain event'ler doğru yerde fırlatılıyor. ✓
+
+1.3  PIPELINE SIRASI — Doğru
+     LoggingBehavior → ValidationBehavior → PerformanceBehavior → Handler
+     (Sıralama kritik; bu sıra doğrudur.)
+
+1.4  RESULT PATTERN — Temiz
+     Exception yerine Result<T> dönüşü. Value property sadece başarıda
+     erişilebilir. Doğru factory metodlar (Success / Failure).
+
+
+────────────────────────────────────────────────────────────────────────────────
+  BÖLÜM 2 — KRİTİK HATALAR
+────────────────────────────────────────────────────────────────────────────────
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║  HATA 1 — Book Değişiklikleri Kaybolıyor                    [ VERİ KAYBI ]  ║
+║  Dosya  : Application/Commands/BorrowBook/BorrowBookCommandHandler.cs       ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+  MEVCUT (YANLIŞ):
+  ─────────────────
+    book.Borrow();                                   // TotalStock azaldı
+    // _bookRepository.UpdateAsync eksik!
+    await _loanRepository.AddAsync(loan, ct);
+    await _unitOfWork.SaveChangesAsync(ct);
+    // Book değişiklikleri DB'ye yazılmadı → stok hiç azalmıyor!
+
+  OLMASI GEREKEN:
+  ────────────────
+    book.Borrow();
+    await _bookRepository.UpdateAsync(book, ct);     // ← EKLENMELİ
+    await _loanRepository.AddAsync(loan, ct);
+    await _unitOfWork.SaveChangesAsync(ct);
+
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║  HATA 2 — ReturnBook'ta İkisi de Kaybolıyor                 [ VERİ KAYBI ]  ║
+║  Dosya  : Application/Commands/ReturnBook/ReturnBookCommandHandler.cs       ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+  MEVCUT (YANLIŞ):
+  ─────────────────
+    loan.Return();
+    book.Return();
+    // İkisi de UpdateAsync edilmiyor!
+    await _unitOfWork.SaveChangesAsync(ct);
+
+  OLMASI GEREKEN:
+  ────────────────
+    loan.Return();
+    book.Return();
+    await _loanRepository.UpdateAsync(loan, ct);     // ← EKLENMELİ
+    await _bookRepository.UpdateAsync(book, ct);     // ← EKLENMELİ
+    await _unitOfWork.SaveChangesAsync(ct);
+
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║  HATA 3 — Loan State Machine Kırık                        [ İŞ KURALI ]    ║
+║  Dosya  : Domain/Entities/Loan.cs  (satır 54-63)                           ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+  MEVCUT (YANLIŞ):
+  ─────────────────
+    public void Return()
+    {
+        if (Period.IsOverdue())
+        {
+            Status = LoanStatus.Overdue;             // Overdue'ya alındı
+            Fee = Money.Create(CalculateFee(), "TRY");
+            // ← Burada bitiyor. Gecikmiş kitap sonsuza kadar Overdue kalıyor!
+        }
+        else
+        {
+            Status = LoanStatus.Returned;
+        }
+    }
+
+  OLMASI GEREKEN:
+  ────────────────
+    public void Return()
+    {
+        if (Status == LoanStatus.Returned)
+            throw new BusinessRuleException("Bu ödünç zaten iade edilmiş.");
+
+        ActualReturnDate = DateTime.UtcNow;
+
+        if (Period.IsOverdue())
+            Fee = Money.Create(CalculateFee(), "TRY");
+
+        Status = LoanStatus.Returned;                // Her iki durumda Returned
+        AddDomainEvent(new LoanReturnedEvent(Id, BookId, MemberId));
+    }
+
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║  HATA 4 — Loan.Fee Public Setter                            [ DDD İHLALİ ] ║
+║  Dosya  : Domain/Entities/Loan.cs  (satır 13)                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+  MEVCUT (YANLIŞ):
+    public Money Fee { get; set; }     // Herkes dışarıdan değiştirebilir!
+
+  OLMASI GEREKEN:
+    public Money Fee { get; private set; }
+
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║  HATA 5 — CalculateFee() Side Effect                        [ TASARIM ]    ║
+║  Dosya  : Domain/Entities/Loan.cs  (satır 41-45)                           ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+  SORUN: Hesaplama metodu hem değer döndürüyor hem de OverDueDays state'ini
+  değiştiriyor. Bir query metodu state mutasyonu yapmamalı.
+
+  MEVCUT (YANLIŞ):
+    public int CalculateFee()
+    {
+        var overdueDays = (int)(DateTime.UtcNow - Period.ExpectedReturnDate).TotalDays;
+        OverDueDays = overdueDays;    // ← Side effect!
+        return overdueDays > 0 ? overdueDays * 2 : 0;
+    }
+
+  OLMASI GEREKEN:
+    public int CalculateFee()
+    {
+        var overdueDays = (int)(DateTime.UtcNow - Period.ExpectedReturnDate).TotalDays;
+        return overdueDays > 0 ? overdueDays * 2 : 0;
+        // OverDueDays'i Return() içinde set et; hesaplama saf kalır.
+    }
+
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║  HATA 6 — N+1 Query + Filtreleme Yok                       [ PERFORMANS ]  ║
+║  Dosya  : Application/Queries/GetActiveLoansByMember/...QueryHandler.cs     ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+  SORUN 1 — Filtreleme yok:
+    GetByMemberIdAsync tüm loan'ları çekiyor (iade edilenler dahil).
+
+  SORUN 2 — N+1:
+    foreach (var loan in loans)
+        var book = await _bookRepository.GetByIdAsync(loan.BookId, ct);
+    // 100 loan → 101 DB round-trip
+
+  ÇÖZÜM:
+    // 1. Repository'ye filtreli metod ekle
+    var loans = await _loanRepository.GetActiveLoansByMemberAsync(memberId, ct);
+    //   GetActiveLoansByMemberAsync → WHERE Status = 'Active'
+
+    // 2. Batch load
+    var bookIds = loans.Select(l => l.BookId).ToList();
+    var books   = await _bookRepository.GetByIdsAsync(bookIds, ct);
+    var bookMap = books.ToDictionary(b => b.Id);
+
+
+────────────────────────────────────────────────────────────────────────────────
+  BÖLÜM 3 — MİMARİ EKSİKLİKLER
+────────────────────────────────────────────────────────────────────────────────
+
+  ┌──────────────────────────────────┬────────────────────────────────────────┐
+  │ Eksik                            │ Etki                                   │
+  ├──────────────────────────────────┼────────────────────────────────────────┤
+  │ Infrastructure katmanı           │ Repository impl., DbContext, migration  │
+  │ API / Presentation katmanı       │ Dışarıya endpoint sunulamıyor          │
+  │ Domain event publishing          │ Event'ler raise edilip yok oluyor      │
+  │ Test: 0 adet                     │ Business logic doğrulaması yok         │
+  │ "Enitiy.cs" yazım hatası         │ Domain/Common/Enitiy.cs → Entity.cs   │
+  └──────────────────────────────────┴────────────────────────────────────────┘
+
+
+────────────────────────────────────────────────────────────────────────────────
+  BÖLÜM 4 — ÖNCELİK SIRALI EYLEM PLANI
+────────────────────────────────────────────────────────────────────────────────
+
+  #   Eylem                               Dosya                       Etki
+  ─── ──────────────────────────────────  ──────────────────────────  ─────────
+  1   UpdateAsync ekle (BorrowBook)        BorrowBookCommandHandler    Veri kaybı
+  2   UpdateAsync ekle (ReturnBook)        ReturnBookCommandHandler    Veri kaybı
+  3   Loan state machine düzelt            Loan.cs (satır 54)         İş kuralı
+  4   Fee setter'ı private yap             Loan.cs (satır 13)         DDD ihlali
+  5   CalculateFee side effect gider       Loan.cs (satır 41)         Tasarım
+  6   N+1 + filtreleme düzelt              GetActiveLoansByMember...  Performans
+  7   10 test yaz                          LibraryApp.Tests/           Doğrulama
+  8   Infrastructure katmanı yaz           —                          Tamamlanma
+
+
+────────────────────────────────────────────────────────────────────────────────
+  SONUÇ
+────────────────────────────────────────────────────────────────────────────────
+
+  Mimari düşünce sağlam. 1-2-3 numaralı hatalar ürünü çalışmaz kılıyor ve
+  30 dakikada düzeltilebilir. Value Object tasarımı ve pipeline kurgusu
+  senior-level anlayışı yansıtıyor; eksikler implementation detaylarında.
+
+================================================================================

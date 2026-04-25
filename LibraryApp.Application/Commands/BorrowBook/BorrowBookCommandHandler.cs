@@ -39,6 +39,7 @@ public class BorrowBookCommandHandler
 			return Result.Failure<Guid>("Bu üye zaten bu kitabı ödünç almış.");
 
 		book.Borrow();
+		await _bookRepository.UpdateAsync(book,cancellationToken);
 		var period = LoanPeriod.Create(request.Start, request.Due);
 		var loan = Loan.Create(book.Id, request.MemberId, period);
 

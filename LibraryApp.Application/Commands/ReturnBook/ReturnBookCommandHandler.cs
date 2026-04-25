@@ -48,9 +48,11 @@ public class ReturnBookCommandHandler
         // 3. Loan aggregate — iş kuralı burada
         // IsOverdue kontrolü, LateFee hesaplama, Status güncelleme
         loan.Return();
+		await _loanRepository.UpdateAsync(loan, ct);
 
         // 4. Book aggregate — stok ve status güncelle
         book.Return();
+		await _bookRepository.UpdateAsync(book, ct);
 
         // 5. Kaydet — BookReturnedEvent burada yayınlanır
         await _unitOfWork.SaveChangesAsync(ct);

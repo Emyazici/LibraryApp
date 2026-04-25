@@ -28,19 +28,19 @@ public class GetActiveLoansByMemberQueryHandler
         // 1. MemberId token'dan geliyor
         var memberId = _currentUser.UserId;
 
-        // 2. Aktif loan'ları çek
+        // 2. Sadece aktif loan'ları çek (WHERE Status = Active)
         var loans = await _loanRepository
-            .GetByMemberIdAsync(memberId, ct);
+            .GetActiveLoansByMemberAsync(memberId, ct);
 
-        // 3. Her loan için BookTitle'ı da çek
-        var dtos = new List<LoanDto>();
+        // 3. Tüm kitapları tek sorguda çek — N+1 yok
+        var bookIds = loans.Select(l => l.BookId).ToList();
+        var books   = await _bookRepository.GetByIdsAsync(bookIds, ct);
+        var bookMap = books.ToDictionary(b => b.Id);
 
-        foreach (var loan in loans)
+        var dtos = loans.Select(loan =>
         {
-            var book = await _bookRepository
-                .GetByIdAsync(loan.BookId, ct);
-
-            dtos.Add(new LoanDto(
+            bookMap.TryGetValue(loan.BookId, out var book);
+            return new LoanDto(
                 loan.Id,
                 loan.BookId,
                 book?.Title ?? "Bilinmiyor",
@@ -50,8 +50,8 @@ public class GetActiveLoansByMemberQueryHandler
                 loan.Period.IsOverdue(),
                 loan.Fee.Amount,
                 loan.Fee.Currency
-            ));
-        }
+            );
+        }).ToList();
 
         return Result<List<LoanDto>>.Success(dtos);
     }
