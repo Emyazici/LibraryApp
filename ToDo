@@ -60,27 +60,4 @@ Değerlendirme kriterleri:
 - Testler mock olmadan saf C# ile yazılmış mı?
 
 Bana adım adım rehberlik et. Önce Domain katmanından başlayalım, 
-her adımda kodumu yazıp sana göndereceğim, sen de değerlendir ve yönlendir.
-
-
-
-LibraryApp.Application/
-├── Commands/
-│   ├── BorrowBook/
-│   │   ├── BorrowBookCommand.cs
-│   │   ├── BorrowBookCommandHandler.cs
-│   │   └── BorrowBookCommandValidator.cs
-│   └── ReturnBook/
-│       ├── ReturnBookCommand.cs
-│       └── ReturnBookCommandHandler.cs
-├── Queries/
-│   ├── GetBookById/
-│   │   ├── GetBookByIdQuery.cs
-│   │   ├── GetBookByIdQueryHandler.cs
-│   │   └── BookDto.cs
-│   └── GetActiveLoansByMember/
-│       ├── GetActiveLoansByMemberQuery.cs
-│       ├── GetActiveLoansByMemberQueryHandler.cs
-│       └── LoanDto.cs
-
-,
+her adımda kodumu yazıp sana göndereceğim, sen de değerlendir ve yönlendir.,
