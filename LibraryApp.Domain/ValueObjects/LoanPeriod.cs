@@ -6,10 +6,10 @@ public sealed class LoanPeriod : ValueObject
 {
     public DateTime BorrowedAt { get; }
     public DateTime ExpectedReturnDate   { get; }
-    private LoanPeriod(DateTime start, DateTime due)
+    private LoanPeriod(DateTime borrowedAt, DateTime expectedReturnDate)
     {
-        BorrowedAt = start;
-        ExpectedReturnDate   = due;
+        BorrowedAt = borrowedAt;
+        ExpectedReturnDate   = expectedReturnDate;
     }
 
     public static LoanPeriod Create(DateTime start, DateTime due)
