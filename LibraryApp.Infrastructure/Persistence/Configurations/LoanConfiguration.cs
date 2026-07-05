@@ -53,6 +53,7 @@ namespace LibraryApp.Infrastructure.Persistence.Configurations
                 .HasForeignKey(l => l.MemberId);
 
             builder.Ignore(b => b.DomainEvents);
+            builder.HasQueryFilter(e => !e.IsDeleted);
         }
     }
 }

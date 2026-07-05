@@ -25,6 +25,8 @@ namespace LibraryApp.Infrastructure.Persistence.Configurations
 
             builder.HasIndex(m => m.Email)
                 .IsUnique();
+
+            builder.HasQueryFilter(e => !e.IsDeleted);
         }
     }
 }

@@ -18,6 +18,8 @@ namespace LibraryApp.Infrastructure.Persistence.Configurations
             builder.Property(a => a.Name)
                 .HasMaxLength(200)
                 .IsRequired();
+
+            builder.HasQueryFilter(e => !e.IsDeleted);
         }
     }
 }
