@@ -1,8 +1,6 @@
-using MediatR;
-
 namespace LibraryApp.Domain.Common
 {
-    public interface IDomainEvent : INotification
+    public interface IDomainEvent
     {
         Guid Id { get; }
         DateTime OccurredOn { get; }

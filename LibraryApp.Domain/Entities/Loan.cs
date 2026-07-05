@@ -9,8 +9,8 @@ public class Loan : AggregateRoot
 {
 	public Guid BookId { get; private set; }
 	public Guid MemberId { get; private set; }
-	public LoanPeriod Period { get; private set; }
-	public Money Fee { get; private set; }
+	public LoanPeriod Period { get; private set; } = null!;
+	public Money Fee { get; private set; } = null!;
 	public DateTime? ActualReturnDate { get; private set; }
 	public LoanStatus Status { get; private set; }
 	public int OverDueDays { get; private set; }

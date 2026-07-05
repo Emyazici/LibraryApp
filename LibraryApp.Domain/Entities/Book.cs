@@ -8,9 +8,9 @@ namespace LibraryApp.Domain.Entities;
 public class Book : AggregateRoot
 {
 	public Guid AuthorId { get; private set; }
-	public string Title { get; private set; }
-	public ISBN Isbn { get; private set; }
-	public Money Money { get; private set; }
+	public string Title { get; private set; } = null!;
+	public ISBN Isbn { get; private set; } = null!;
+	public Money Money { get; private set; } = null!;
 	public int TotalStock { get; private set; }	
 	public BookStatus Status { get; private set; }
 	

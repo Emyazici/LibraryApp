@@ -5,8 +5,8 @@ namespace LibraryApp.Domain.Entities;
 
 public class Member : Entity
 {
-	public string Name { get; private set; } 
-	public string Email { get; private set; }
+	public string Name { get; private set; } = null!;
+	public string Email { get; private set; } = null!;
 
 	private Member() {}
 
