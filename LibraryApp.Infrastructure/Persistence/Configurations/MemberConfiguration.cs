@@ -19,6 +19,10 @@ namespace LibraryApp.Infrastructure.Persistence.Configurations
                 .HasMaxLength(200)
                 .IsRequired();
 
+            builder.Property(m => m.Surname)
+                .HasMaxLength(200)
+                .IsRequired();
+
             builder.Property(m => m.Email)
                 .HasMaxLength(256)
                 .IsRequired();
