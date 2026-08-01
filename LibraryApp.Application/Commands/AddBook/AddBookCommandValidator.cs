@@ -18,8 +18,9 @@ public class AddBookCommandValidator : AbstractValidator<AddBookCommand>
 		RuleFor(x => x.ISBN)
 			.NotEmpty()
 			.WithMessage("ISBN boş olamaz.")
-			.Matches(@"^\d{3}-\d{10}$")
-			.WithMessage("ISBN formatı geçersiz. Örnek: 978-1234567890");
+			.Must(isbn => isbn.Replace("-", "").Replace(" ", "") is { Length: 10 or 13 } cleaned
+				&& cleaned.All(char.IsDigit))
+			.WithMessage("ISBN 10 veya 13 haneli rakamlardan oluşmalıdır (tire/boşluk kullanılabilir).");
 
 		RuleFor(x => x.Price)
 			.GreaterThan(0)
