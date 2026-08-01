@@ -150,7 +150,7 @@ Aynı sınıftaki diğer her alan `private set`; `Loan.Fee` için de aynı sorun
 
 ## 5. Önerilen Sıra
 
-1. **B1 ve B2'yi düzelt** — ikisi de 5 dakikalık değişiklik, biri kullanılabilirlik hatası biri DDD ihlali.
+1. **B1 ve B2'yi düzelt** — ikisi de 5 dakikalık değişiklik, biri kullanılabilirlik hatası biri DDD ihlali. ✅ DÜZELTİLDİ
 2. **Migration'ı çalıştır** (Faz 6) — `OwnsOne` mapping'lerinin gerçekten çalıştığını doğrulamadan ilerlemek risk biriktiriyor.
 3. **`RegisterCommand`/`LoginCommand` yaz** — Identity/JWT altyapısı hazır, kullanılamıyor olması en büyük eksik.
 4. Infrastructure için birkaç entegrasyon testi (EF Core InMemory/SQLite ile) — özellikle `SaveChangesAsync` reflection kısmı.
