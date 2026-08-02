@@ -1,6 +1,7 @@
 ﻿using LibraryApp.Application.Common;
 using LibraryApp.Domain.Entities;
 using LibraryApp.Domain.Repositories;
+using LibraryApp.Infrastructure.Authentication;
 using LibraryApp.Infrastructure.Persistence;
 using LibraryApp.Infrastructure.Persistence.Repositories;
 using LibraryApp.Infrastructure.Services;
@@ -25,6 +26,13 @@ public static class InfrastructureServiceRegistration
 
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddHttpContextAccessor();
+
+        services.Configure<KeycloakOptions>(configuration.GetSection(KeycloakOptions.SectionName));
+        services.AddHttpClient<IKeycloakAdminClient, KeycloakAdminClient>((sp, client) =>
+        {
+            var options = configuration.GetSection(KeycloakOptions.SectionName).Get<KeycloakOptions>();
+            client.BaseAddress = new Uri(options?.AdminBaseUrl ?? "http://localhost:8080");
+        });
 
         return services;
     }

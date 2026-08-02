@@ -1,0 +1,38 @@
+{
+  "realm": "libraryapp",
+  "enabled": true,
+  "sslRequired": "none",
+  "roles": {
+    "realm": [
+      { "name": "Admin", "description": "Full system access" },
+      { "name": "Employee", "description": "Library staff access" },
+      { "name": "Customer", "description": "Library member access" }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "libraryapp-api",
+      "name": "LibraryApp API",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "libraryapp-api-secret-dev-only",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true,
+      "redirectUris": ["*"],
+      "webOrigins": ["*"]
+    }
+  ],
+  "users": [
+    {
+      "username": "service-account-libraryapp-api",
+      "serviceAccountClientId": "libraryapp-api",
+      "enabled": true,
+      "clientRoles": {
+        "realm-management": ["manage-users", "view-realm"]
+      }
+    }
+  ]
+}

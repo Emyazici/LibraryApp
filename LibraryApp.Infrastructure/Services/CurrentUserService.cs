@@ -1,6 +1,6 @@
-﻿using System.Security.Claims;
 using LibraryApp.Application.Common;
 using Microsoft.AspNetCore.Http;
+using Microsoft.IdentityModel.JsonWebTokens;
 
 namespace LibraryApp.Infrastructure.Services;
 
@@ -13,12 +13,13 @@ public class CurrentUserService : ICurrentUserService
         _httpContextAccessor = httpContextAccessor;
     }
 
+    // Keycloak token'ında kullanıcı id'si "sub" claim'inde gelir.
     public Guid UserId
     {
         get
         {
             var userIdClaim = _httpContextAccessor.HttpContext?.User
-                .FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                .FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
             return userIdClaim is not null && Guid.TryParse(userIdClaim, out var userId)
                 ? userId
@@ -26,10 +27,12 @@ public class CurrentUserService : ICurrentUserService
         }
     }
 
+    // Keycloak "preferred_username" claim'ini kullanır.
     public string UserName =>
         _httpContextAccessor.HttpContext?.User
-            .FindFirst(ClaimTypes.Name)?.Value ?? string.Empty;
+            .FindFirst("preferred_username")?.Value ?? string.Empty;
 
+    // realm_access.roles içindeki roller Program.cs'teki ClaimsTransformation ile ClaimTypes.Role'e taşınıyor, IsInRole değişmeden çalışır.
     public bool IsAdmin =>
         _httpContextAccessor.HttpContext?.User
             .IsInRole("Admin") ?? false;

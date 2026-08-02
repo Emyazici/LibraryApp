@@ -1,0 +1,27 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: libraryapp-postgres
+    environment:
+      POSTGRES_DB: libraryapp
+      POSTGRES_USER: libraryapp
+      POSTGRES_PASSWORD: libraryapp
+    ports:
+      - "5432:5432"
+    volumes:
+      - libraryapp-postgres-data:/var/lib/postgresql/data
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    container_name: libraryapp-keycloak
+    command: start-dev --import-realm
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json
+
+volumes:
+  libraryapp-postgres-data:

@@ -30,6 +30,26 @@ namespace LibraryApp.Infrastructure.Persistence.Configurations
             builder.HasIndex(m => m.Email)
                 .IsUnique();
 
+            builder.OwnsOne(m => m.Balance, balance =>
+            {
+                balance.Property(b => b.Amount)
+                    .HasColumnName("BalanceAmount")
+                    .HasPrecision(18, 2)
+                    .IsRequired();
+
+                balance.Property(b => b.Currency)
+                    .HasColumnName("BalanceCurrency")
+                    .HasMaxLength(10)
+                    .IsRequired();
+            });
+
+            builder.Property(m => m.ExternalIdentityId)
+                .HasMaxLength(64);
+
+            builder.HasIndex(m => m.ExternalIdentityId)
+                .IsUnique()
+                .HasFilter("\"ExternalIdentityId\" IS NOT NULL");
+
             builder.HasQueryFilter(e => !e.IsDeleted);
         }
     }
