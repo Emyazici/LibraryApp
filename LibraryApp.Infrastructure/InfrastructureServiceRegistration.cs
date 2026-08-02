@@ -1,8 +1,6 @@
 ﻿using LibraryApp.Application.Common;
 using LibraryApp.Domain.Entities;
 using LibraryApp.Domain.Repositories;
-using LibraryApp.Infrastructure.Authentication;
-using LibraryApp.Infrastructure.Identity;
 using LibraryApp.Infrastructure.Persistence;
 using LibraryApp.Infrastructure.Persistence.Repositories;
 using LibraryApp.Infrastructure.Services;
@@ -26,11 +24,6 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<IMemberRepository, MemberRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
-        services.AddIdentity<ApplicationUser, ApplicationRole>()
-            .AddEntityFrameworkStores<LibraryDbContext>()
-            .AddDefaultTokenProviders();
-
-        services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddHttpContextAccessor();
 
