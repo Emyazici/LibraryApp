@@ -2,7 +2,6 @@
 using LibraryApp.Domain.Common;
 using LibraryApp.Domain.Entities;
 using MediatR;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
