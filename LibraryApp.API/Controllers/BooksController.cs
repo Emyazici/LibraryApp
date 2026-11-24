@@ -2,6 +2,7 @@ using LibraryApp.API.Extensions;
 using LibraryApp.Application.Commands.AddBook;
 using LibraryApp.Application.Commands.DeleteBook;
 using LibraryApp.Application.Queries.GetBookById;
+using LibraryApp.Application.Queries.GetBooks;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -15,6 +16,15 @@ public record AddBookRequest(Guid AuthorId, string Title, string ISBN, decimal P
 [Authorize]
 public class BooksController(ISender sender) : ControllerBase
 {
+    /// <summary>Tüm kitapları listeler (silinmişler hariç).</summary>
+    [HttpGet]
+    [ProducesResponseType<List<BookDto>>(StatusCodes.Status200OK)]
+    public async Task<ActionResult<List<BookDto>>> GetAll(CancellationToken ct)
+    {
+        var result = await sender.Send(new GetBooksQuery(), ct);
+        return result.ToActionResult();
+    }
+
     /// <summary>Kitap detayını getirir.</summary>
     [HttpGet("{id:guid}")]
     [ProducesResponseType<BookDto>(StatusCodes.Status200OK)]

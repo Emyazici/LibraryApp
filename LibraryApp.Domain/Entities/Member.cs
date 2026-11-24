@@ -9,7 +9,7 @@ public class Member : Entity
 	public string Name { get; private set; } = null!;
     public string Surname { get; private set; } = null!;
     public string Email { get; private set; } = null!;
-    public Money Balance { get; private set; }
+    public Money Balance { get; private set; } = null!;
 
     // Keycloak'taki kullanıcının "sub" claim'i (UUID string). Domain, Keycloak'a bağımlı olmasın diye nötr isimlendirildi.
     public string? ExternalIdentityId { get; private set; }
