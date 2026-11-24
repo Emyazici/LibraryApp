@@ -1,9 +1,9 @@
-using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Text.Json;
+using LibraryApp.API.Authentication;
 using LibraryApp.Application;
 using LibraryApp.Infrastructure;
 using LibraryApp.Infrastructure.Authentication;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.OpenApi.Models;
 
@@ -45,35 +45,22 @@ builder.Services
         options.Audience = keycloakOptions.Audience;
         options.RequireHttpsMetadata = false; // dev only — Keycloak container HTTP üzerinden çalışıyor
 
-        options.Events = new JwtBearerEvents
-        {
-            // Keycloak roller "realm_access.roles" içinde nested array olarak gelir; .NET'in
-            // User.IsInRole(...)/[Authorize(Roles=...)] mekanizmasının çalışması için bunları
-            // düz ClaimTypes.Role claim'lerine dönüştürüyoruz.
-            OnTokenValidated = context =>
-            {
-                if (context.SecurityToken is not JwtSecurityToken jwtToken || context.Principal?.Identity is not ClaimsIdentity identity)
-                    return Task.CompletedTask;
+        // Claim isimleri token'daki gibi kalsın ("sub", "preferred_username", "realm_access").
+        options.MapInboundClaims = false;
 
-                var realmAccessClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == "realm_access")?.Value;
-                if (string.IsNullOrWhiteSpace(realmAccessClaim))
-                    return Task.CompletedTask;
+        // Docker: token issuer'ı (localhost:8180) ile API'nin Keycloak'a eriştiği adres (keycloak:8080) farklı olabilir.
+        if (!string.IsNullOrWhiteSpace(keycloakOptions.MetadataAddress))
+            options.MetadataAddress = keycloakOptions.MetadataAddress;
 
-                using var doc = JsonDocument.Parse(realmAccessClaim);
-                if (doc.RootElement.TryGetProperty("roles", out var roles))
-                {
-                    foreach (var role in roles.EnumerateArray())
-                    {
-                        var roleName = role.GetString();
-                        if (!string.IsNullOrWhiteSpace(roleName))
-                            identity.AddClaim(new Claim(ClaimTypes.Role, roleName));
-                    }
-                }
+        options.TokenValidationParameters.NameClaimType = "preferred_username";
+        options.TokenValidationParameters.RoleClaimType = ClaimTypes.Role;
 
-                return Task.CompletedTask;
-            }
-        };
+        if (!string.IsNullOrWhiteSpace(keycloakOptions.ValidIssuer))
+            options.TokenValidationParameters.ValidIssuer = keycloakOptions.ValidIssuer;
     });
+
+// realm_access.roles → ClaimTypes.Role
+builder.Services.AddTransient<IClaimsTransformation, KeycloakRolesClaimsTransformation>();
 
 builder.Services.AddAuthorization();
 
@@ -91,3 +78,5 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+public partial class Program;
