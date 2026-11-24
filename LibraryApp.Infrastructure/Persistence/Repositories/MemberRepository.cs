@@ -33,9 +33,19 @@ namespace LibraryApp.Infrastructure.Persistence.Repositories
             return await _context.Members.AnyAsync(m => m.Id == id, ct);
         }
 
+        public async Task<bool> ExistsByEmailAsync(string email, CancellationToken ct = default)
+        {
+            return await _context.Members.AnyAsync(m => m.Email == email, ct);
+        }
+
         public async Task<Member?> GetByIdAsync(Guid id, CancellationToken ct = default)
         {
             return await _context.Members.FirstOrDefaultAsync(m => m.Id == id, ct);
+        }
+
+        public async Task<Member?> GetByExternalIdentityIdAsync(string externalIdentityId, CancellationToken ct = default)
+        {
+            return await _context.Members.FirstOrDefaultAsync(m => m.ExternalIdentityId == externalIdentityId, ct);
         }
 
         public Task UpdateAsync(Member member, CancellationToken ct = default)

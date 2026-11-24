@@ -1,0 +1,78 @@
+{
+  "realm": "libraryapp",
+  "enabled": true,
+  "sslRequired": "none",
+  "accessTokenLifespan": 3600,
+  "roles": {
+    "realm": [
+      { "name": "Admin", "description": "Full system access" },
+      { "name": "Employee", "description": "Library staff access" },
+      { "name": "Customer", "description": "Library member access" }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "libraryapp-api",
+      "name": "LibraryApp API",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "libraryapp-api-secret-dev-only",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true,
+      "redirectUris": ["*"],
+      "webOrigins": ["*"]
+    }
+  ],
+  "users": [
+    {
+      "username": "service-account-libraryapp-api",
+      "serviceAccountClientId": "libraryapp-api",
+      "enabled": true,
+      "clientRoles": {
+        "realm-management": ["manage-users", "view-realm"]
+      }
+    },
+    {
+      "id": "a0000000-0000-0000-0000-000000000001",
+      "username": "admin@libraryapp.local",
+      "email": "admin@libraryapp.local",
+      "emailVerified": true,
+      "firstName": "Demo",
+      "lastName": "Admin",
+      "enabled": true,
+      "credentials": [
+        { "type": "password", "value": "Admin123!", "temporary": false }
+      ],
+      "realmRoles": ["default-roles-libraryapp", "Admin"]
+    },
+    {
+      "id": "e0000000-0000-0000-0000-000000000001",
+      "username": "employee@libraryapp.local",
+      "email": "employee@libraryapp.local",
+      "emailVerified": true,
+      "firstName": "Demo",
+      "lastName": "Employee",
+      "enabled": true,
+      "credentials": [
+        { "type": "password", "value": "Employee123!", "temporary": false }
+      ],
+      "realmRoles": ["default-roles-libraryapp", "Employee"]
+    },
+    {
+      "id": "c0000000-0000-0000-0000-000000000001",
+      "username": "customer@libraryapp.local",
+      "email": "customer@libraryapp.local",
+      "emailVerified": true,
+      "firstName": "Demo",
+      "lastName": "Customer",
+      "enabled": true,
+      "credentials": [
+        { "type": "password", "value": "Customer123!", "temporary": false }
+      ],
+      "realmRoles": ["default-roles-libraryapp", "Customer"]
+    }
+  ]
+}

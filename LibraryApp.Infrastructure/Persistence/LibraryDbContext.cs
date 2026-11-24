@@ -1,9 +1,7 @@
 ﻿using LibraryApp.Application.Common;
 using LibraryApp.Domain.Common;
 using LibraryApp.Domain.Entities;
-using LibraryApp.Infrastructure.Identity;
 using MediatR;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -13,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace LibraryApp.Infrastructure.Persistence
 {
-    public class LibraryDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, Guid>
+    public class LibraryDbContext : DbContext
     {
         public DbSet<Book> Books { get; set; }
         public DbSet<Loan> Loans { get; set; }

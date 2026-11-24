@@ -369,3 +369,7 @@ image-1.png
 image.png
 Proje-Degerlendirme-Raporu-2026-08-01.md
 Keycloak-Gecis-Plani.md
+
+# Local tool files
+.claude/worktrees/
+.claude/settings.local.json

@@ -1,4 +1,4 @@
-﻿using LibraryApp.Domain.Entities;
+using LibraryApp.Domain.Entities;
 using LibraryApp.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -37,6 +37,11 @@ namespace LibraryApp.Infrastructure.Persistence.Repositories
         public async Task<Book?> GetByIdAsync(Guid id, CancellationToken ct = default)
         {
             return await _context.Books.FirstOrDefaultAsync(b => b.Id == id, ct);
+        }
+
+        public async Task<List<Book>> GetAllAsync(CancellationToken ct = default)
+        {
+            return await _context.Books.AsNoTracking().OrderBy(b => b.Title).ToListAsync(ct);
         }
 
         public async Task<List<Book>> GetByIdsAsync(IEnumerable<Guid> ids, CancellationToken ct = default)

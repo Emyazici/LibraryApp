@@ -1,0 +1,38 @@
+# VCS / tooling
+.git/
+.gitignore
+.gitattributes
+.github/
+.claude/
+.vs/
+.vscode/
+.idea/
+**/*.user
+**/*.suo
+
+# Build output
+**/bin/
+**/obj/
+**/out/
+**/publish/
+
+# Test output
+**/TestResults/
+**/coverage*/
+**/*.trx
+**/*.coverage
+
+# Docs and non-build assets
+**/*.md
+*.png
+*.txt
+docs/
+libraryapp-issues/
+
+# Local runtime / compose files (not needed inside the image)
+docker-compose*.yml
+**/Dockerfile
+.dockerignore
+keycloak/
+**/.env
+**/.env.*

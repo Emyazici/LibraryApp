@@ -1,0 +1,98 @@
+# LibraryApp local / demo stack
+#
+#   docker compose up --build
+#
+#   API + Swagger : http://localhost:8080/swagger
+#   Keycloak      : http://localhost:8180  (admin console: admin / admin)
+#   PostgreSQL    : localhost:5432         (libraryapp / libraryapp)
+#
+# WARNING: every credential and secret in this file is a DEV-ONLY value.
+# Never reuse them in a shared or production environment.
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: libraryapp-postgres
+    environment:
+      POSTGRES_DB: libraryapp
+      POSTGRES_USER: libraryapp
+      POSTGRES_PASSWORD: libraryapp # dev-only
+    ports:
+      - "5432:5432"
+    volumes:
+      - libraryapp-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U libraryapp -d libraryapp"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    container_name: libraryapp-keycloak
+    command: start-dev --import-realm
+    environment:
+      # Keycloak 26 bootstrap admin (dev-only credentials)
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      # Fixed public hostname: every token gets iss=http://localhost:8180/realms/libraryapp,
+      # even when it is requested by the API over the internal network (http://keycloak:8080).
+      KC_HOSTNAME: http://localhost:8180
+      # Backchannel endpoints (token, jwks, admin API) follow the request host, so the
+      # API container can reach them via http://keycloak:8080.
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
+      KC_HEALTH_ENABLED: "true"
+    ports:
+      - "8180:8080"
+    volumes:
+      - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
+    healthcheck:
+      # The Keycloak image has no curl/wget: speak HTTP to the management port (9000) via bash /dev/tcp.
+      test:
+        - CMD-SHELL
+        - >-
+          exec 3<>/dev/tcp/127.0.0.1/9000 &&
+          printf 'GET /health/ready HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3 &&
+          grep -q '"status": "UP"' <&3
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 60s
+
+  api:
+    build:
+      context: .
+      dockerfile: LibraryApp.API/Dockerfile
+    image: libraryapp-api:dev
+    container_name: libraryapp-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      # Development gives detailed errors and Swagger for this demo stack.
+      # Swagger__Enabled keeps Swagger on even if the environment is switched to Production.
+      ASPNETCORE_ENVIRONMENT: Development
+      Swagger__Enabled: "true"
+
+      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=libraryapp;Username=libraryapp;Password=libraryapp" # dev-only
+      Database__ApplyMigrationsOnStartup: "true"
+      Database__SeedSampleData: "true"
+
+      # Tokens carry the public issuer (what the browser / Swagger / host curl see) ...
+      Keycloak__Authority: http://localhost:8180/realms/libraryapp
+      Keycloak__ValidIssuer: http://localhost:8180/realms/libraryapp
+      # ... while discovery/JWKS and the admin API are reached over the internal Docker network.
+      Keycloak__MetadataAddress: http://keycloak:8080/realms/libraryapp/.well-known/openid-configuration
+      Keycloak__AdminBaseUrl: http://keycloak:8080
+      Keycloak__Realm: libraryapp
+      Keycloak__Audience: account
+      Keycloak__ClientId: libraryapp-api
+      Keycloak__ClientSecret: libraryapp-api-secret-dev-only # dev-only, matches keycloak/realm-export.json
+
+volumes:
+  libraryapp-postgres-data:
