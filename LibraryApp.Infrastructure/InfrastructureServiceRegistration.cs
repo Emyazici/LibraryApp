@@ -4,6 +4,7 @@ using LibraryApp.Domain.Repositories;
 using LibraryApp.Infrastructure.Authentication;
 using LibraryApp.Infrastructure.Persistence;
 using LibraryApp.Infrastructure.Persistence.Repositories;
+using LibraryApp.Infrastructure.Persistence.Seed;
 using LibraryApp.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -24,6 +25,7 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<ILoanRepository, LoanRepository>();
         services.AddScoped<IMemberRepository, MemberRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+        services.AddScoped<DatabaseInitializer>();
 
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddHttpContextAccessor();

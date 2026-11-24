@@ -1,9 +1,11 @@
 using System.Security.Claims;
 using LibraryApp.API.Authentication;
 using LibraryApp.API.ErrorHandling;
+using LibraryApp.API.Extensions;
 using LibraryApp.Application;
 using LibraryApp.Infrastructure;
 using LibraryApp.Infrastructure.Authentication;
+using LibraryApp.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.OpenApi.Models;
@@ -67,11 +69,14 @@ builder.Services.AddTransient<IClaimsTransformation, KeycloakRolesClaimsTransfor
 
 builder.Services.AddAuthorization();
 
+builder.Services.AddHealthChecks()
+    .AddDbContextCheck<LibraryDbContext>("database");
+
 var app = builder.Build();
 
 app.UseExceptionHandler();
 
-if (app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment() || app.Configuration.GetValue<bool>("Swagger:Enabled"))
 {
     app.UseSwagger();
     app.UseSwaggerUI();
@@ -80,8 +85,11 @@ if (app.Environment.IsDevelopment())
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.MapHealthChecks("/health").AllowAnonymous();
 app.MapControllers();
 
-app.Run();
+await app.InitializeDatabaseAsync();
+
+await app.RunAsync();
 
 public partial class Program;
