@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using LibraryApp.API.Authentication;
+using LibraryApp.API.ErrorHandling;
 using LibraryApp.Application;
 using LibraryApp.Infrastructure;
 using LibraryApp.Infrastructure.Authentication;
@@ -13,6 +14,8 @@ var keycloakOptions = builder.Configuration.GetSection(KeycloakOptions.SectionNa
     ?? throw new InvalidOperationException("Keycloak yapılandırması eksik.");
 
 builder.Services.AddControllers();
+builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -65,6 +68,8 @@ builder.Services.AddTransient<IClaimsTransformation, KeycloakRolesClaimsTransfor
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
+
+app.UseExceptionHandler();
 
 if (app.Environment.IsDevelopment())
 {
